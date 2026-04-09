@@ -1,18 +1,27 @@
 from flask import Flask, request, render_template, send_file
 import numpy as np
-import tensorflow as tf
 import pandas as pd
 import io
-
-import matplotlib.pyplot as plt
 import base64
 from io import BytesIO
+
+# ---------------- MEMORY FIXES ----------------
+import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+
+import tensorflow as tf
+tf.config.set_visible_devices([], 'GPU')  # disable GPU
+
+import matplotlib
+matplotlib.use('Agg')  # important for server
+import matplotlib.pyplot as plt
+
 from scipy.signal import find_peaks
 
 app = Flask(__name__)
 
-# Load trained model
-model = tf.keras.models.load_model("ecg_cnn_model.h5")
+# ---------------- LOAD MODEL (LIGHT) ----------------
+model = tf.keras.models.load_model("ecg_cnn_model.h5", compile=False)
 
 
 # ---------------- PREPROCESS ----------------
@@ -22,13 +31,12 @@ def preprocess(file):
     except:
         return None
 
-    # Clean column names
     data.columns = data.columns.str.replace("'", "").str.strip().str.upper()
 
     if data.shape[1] < 1:
         return None
 
-    # Select ECG signal column
+    # select signal
     if 'MLII' in data.columns:
         signal = data['MLII'].values
     elif data.shape[1] >= 2:
@@ -36,15 +44,14 @@ def preprocess(file):
     else:
         signal = data.iloc[:, 0].values
 
-    # Ensure sufficient length
     if len(signal) < 400:
         return None
 
-    # Normalize safely
+    # normalize safely
     signal = (signal - np.mean(signal)) / (np.std(signal) + 1e-8)
 
-    # Prepare input for model
-    segment = signal[:400].reshape(1, 400, 1)
+    # smaller segment (less memory)
+    segment = signal[:200].reshape(1, 200, 1)
 
     return segment, signal
 
@@ -56,26 +63,22 @@ def home():
         file = request.files.get('file')
 
         if not file or file.filename == '':
-            return render_template(
-                'index.html',
-                result="No file selected",
-                confidence=None,
-                heart_rate=None
-            )
+            return render_template('index.html',
+                                   result="No file selected",
+                                   confidence=None,
+                                   heart_rate=None)
 
         result_data = preprocess(file)
 
         if result_data is None:
-            return render_template(
-                'index.html',
-                result="Invalid ECG file",
-                confidence=None,
-                heart_rate=None
-            )
+            return render_template('index.html',
+                                   result="Invalid ECG file",
+                                   confidence=None,
+                                   heart_rate=None)
 
         segment, signal = result_data
 
-        # -------- MODEL PREDICTION --------
+        # -------- MODEL --------
         pred = model.predict(segment, verbose=0)[0][0]
 
         if pred > 0.5:
@@ -95,18 +98,16 @@ def home():
         else:
             heart_rate = None
 
-        # -------- ECG PLOT --------
+        # -------- ECG GRAPH --------
         plt.figure(figsize=(6, 2))
-        plt.plot(signal[:1000], label="ECG")
+        plt.plot(signal[:500], label="ECG")
 
-        # Mark peaks
         for p in peaks:
-            if p < 1000:
+            if p < 500:
                 plt.plot(p, signal[p], "ro")
 
-        plt.title(f"ECG Waveform ({heart_rate if heart_rate else '--'} BPM)")
+        plt.title(f"ECG ({heart_rate if heart_rate else '--'} BPM)")
         plt.grid(alpha=0.3)
-        plt.legend()
         plt.tight_layout()
 
         img = BytesIO()
@@ -115,28 +116,24 @@ def home():
         plot_url = base64.b64encode(img.getvalue()).decode()
         plt.close()
 
-        return render_template(
-            'index.html',
-            result=result,
-            confidence=confidence,
-            heart_rate=heart_rate,
-            plot_url=plot_url
-        )
+        return render_template('index.html',
+                               result=result,
+                               confidence=confidence,
+                               heart_rate=heart_rate,
+                               plot_url=plot_url)
 
-    return render_template(
-        'index.html',
-        result=None,
-        confidence=None,
-        heart_rate=None
-    )
+    return render_template('index.html',
+                           result=None,
+                           confidence=None,
+                           heart_rate=None)
 
 
-# ---------------- RAW → CSV CONVERTER ----------------
+# ---------------- RAW → CSV ----------------
 @app.route('/convert', methods=['POST'])
 def convert():
     file = request.files.get('rawfile')
 
-    if not file or file.filename == '':
+    if not file:
         return "No file uploaded"
 
     try:
@@ -174,6 +171,6 @@ def convert():
         return "Conversion failed"
 
 
-# ---------------- RUN APP ----------------
+# ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,0 +1,7 @@
+flask
+tensorflow
+pandas
+numpy
+matplotlib
+scipy
+gunicorn

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CardioSense AI</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            text-align: center;
+            padding: 40px;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        .container {
+            background: white;
+            color: black;
+            padding: 30px;
+            border-radius: 15px;
+            width: 450px;
+            margin: auto;
+            box-shadow: 0px 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .tabs {
+            margin: 20px 0;
+        }
+
+        .tab-btn {
+            background: #ddd;
+            border: none;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .tab-btn.active {
+            background: #2a5298;
+            color: white;
+        }
+
+        .tab {
+            display: none;
+        }
+
+        .tab.active {
+            display: block;
+        }
+
+        input[type="file"] {
+            margin: 15px 0;
+        }
+
+        button {
+            background: #2a5298;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        button:hover {
+            background: #1e3c72;
+        }
+
+        .normal {
+            color: green;
+        }
+
+        .abnormal {
+            color: red;
+        }
+
+        .graph-box {
+            background:#f5f5f5;
+            padding:10px;
+            border-radius:10px;
+            margin-top: 15px;
+        }
+
+        .info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #444;
+        }
+
+        footer {
+            margin-top: 30px;
+            font-size: 13px;
+            color: #ddd;
+        }
+    </style>
+
+    <script>
+        function showTab(tabName) {
+            document.getElementById("analyze").classList.remove("active");
+            document.getElementById("convert").classList.remove("active");
+
+            document.getElementById(tabName).classList.add("active");
+
+            let buttons = document.getElementsByClassName("tab-btn");
+            for (let btn of buttons) btn.classList.remove("active");
+
+            event.target.classList.add("active");
+        }
+    </script>
+</head>
+
+<body>
+
+<h1>❤️ CardioSense AI</h1>
+<p>Deep Learning-Based ECG Analysis System</p>
+
+<div class="container">
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('analyze')">Analyze ECG</button>
+        <button class="tab-btn" onclick="showTab('convert')">Convert Data</button>
+    </div>
+
+    <!-- ANALYZER -->
+    <div id="analyze" class="tab active">
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="file" required><br>
+            <button type="submit">Analyze ECG</button>
+        </form>
+
+        {% if result %}
+            <h2 class="{{ 'normal' if result=='Normal' else 'abnormal' }}">
+                {{ result }}
+            </h2>
+
+            <div class="info">
+                <p>Confidence: {{ confidence }}%</p>
+                <p><b>❤️ Heart Rate:</b> {{ heart_rate }} BPM</p>
+            </div>
+
+            {% if plot_url %}
+            <div class="graph-box">
+                <img src="data:image/png;base64,{{ plot_url }}" width="100%">
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- CONVERTER -->
+    <div id="convert" class="tab">
+        <form action="/convert" method="POST" enctype="multipart/form-data">
+            <input type="file" name="rawfile" required><br>
+            <button type="submit">Convert to CSV</button>
+        </form>
+
+        <p class="info">
+            Upload raw ECG data (.txt) → get clean CSV for analysis
+        </p>
+    </div>
+
+</div>
+
+<footer>
+    Built by <b>Ayush Tiwari</b> | ECE + AI Project | IIT Guwahati
+</footer>
+
+</body>
+</html>

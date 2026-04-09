@@ -1,5 +1,5 @@
 flask
-tensorflow
+tensorflow-cpu
 pandas
 numpy
 matplotlib

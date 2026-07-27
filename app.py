@@ -108,7 +108,7 @@ def predict_ecg(file):
 
 
 # ----------- GRADIO UI -----------
-with gr.Blocks(theme=gr.themes.Soft(), title="CardioSense AI") as demo:
+with gr.Blocks(title="CardioSense AI") as demo:
     gr.Markdown("""
     # 💓 CardioSense AI
     ### ECG Heart Condition Detector
@@ -140,5 +140,6 @@ if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",
         server_port=port,
-        share=False
+        share=False,
+        theme=gr.themes.Soft()
     )

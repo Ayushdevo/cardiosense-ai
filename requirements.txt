@@ -5,3 +5,4 @@ pandas
 matplotlib
 scipy
 h5py
+gunicorn

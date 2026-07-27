@@ -1,7 +1,7 @@
-flask
+gradio
 tensorflow-cpu
-pandas
 numpy
+pandas
 matplotlib
 scipy
-gunicorn
+h5py

@@ -142,5 +142,4 @@ ECE + AI | IIT Guwahati
 ---
 
 ## 🚀 Live Demo
-
-👉 https://cardiosense-ai-67e1.onrender.com
+👉 https://cardiosense-ai-i.onrender.com

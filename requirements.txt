@@ -1,5 +1,5 @@
 gradio
-tensorflow-cpu
+tensorflow==2.19.0
 numpy
 pandas
 matplotlib

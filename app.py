@@ -133,7 +133,10 @@ with gr.Blocks(theme=gr.themes.Soft(), title="CardioSense AI") as demo:
     gr.Markdown("> ⚠️ For educational use only. Not a substitute for medical advice.")
 
 if __name__ == "__main__":
+    import os
+
     port = int(os.environ.get("PORT", 10000))
+
     demo.launch(
         server_name="0.0.0.0",
         server_port=port,

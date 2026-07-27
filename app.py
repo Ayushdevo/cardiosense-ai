@@ -22,8 +22,13 @@ model = tf.keras.models.load_model("ecg_cnn_model.h5", compile=False)
 
 # ----------- PREPROCESS -----------
 def preprocess(filepath):
-    data = pd.read_csv(filepath, encoding='latin1', on_bad_lines='skip')
-    data.columns = data.columns.astype(str).str.replace("'", "").str.strip().str.upper()
+    try:
+        data = pd.read_csv(filepath, encoding='latin1', on_bad_lines='skip')
+        # Convert columns to string first to prevent AttributeError on numeric headers
+        data.columns = data.columns.astype(str).str.replace("'", "").str.strip().str.upper()
+    except Exception as e:
+        print(f"Error reading CSV: {e}")
+        return None, f"Error reading CSV: {e}"
 
     if data.shape[1] < 1:
         return None, "The uploaded CSV has no columns."
@@ -41,12 +46,17 @@ def preprocess(filepath):
     # Drop any NaN values caused by text
     signal = signal[~np.isnan(signal)]
 
-    if len(signal) < 400:
-        return None, f"Not enough valid numerical data points. Found {len(signal)}, need at least 400."
+    # Dynamically grab the exact input length your model expects
+    expected_length = model.input_shape[1]
+
+    if len(signal) < expected_length:
+        return None, f"Not enough valid numerical data points. Found {len(signal)}, need at least {expected_length}."
 
     # Normalize
     signal = (signal - np.mean(signal)) / (np.std(signal) + 1e-8)
-    segment = signal[:200].reshape(1, 200, 1)
+    
+    # Slice the segment using the model's exact expected length
+    segment = signal[:expected_length].reshape(1, expected_length, 1)
 
     return (segment, signal), None
 

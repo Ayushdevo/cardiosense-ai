@@ -31,20 +31,15 @@ CardioSense AI is a web-based application that analyzes ECG (Electrocardiogram) 
 ---
 
 ## 📂 Project Structure
-
-```
-cardiosense-ai/
+~~~
+CardioSense-AI/
 │
 ├── app.py
 ├── ecg_cnn_model.h5
 ├── requirements.txt
-├── runtime.txt
-├── Procfile
-│
-└── templates/
-    └── index.html
-```
-
+├── render.yaml
+└── README.md
+~~~
 ---
 
 ## ⚙️ Installation (Run Locally)

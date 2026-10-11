@@ -1,7 +1,6 @@
 import gradio as gr
 import numpy as np
 import pandas as pd
-from PIL import Image
 import os
 import traceback
 from pathlib import Path
@@ -11,12 +10,9 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
 tf.config.set_visible_devices([], 'GPU')
 
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-
 from scipy.signal import find_peaks
 from ecg_processing import prepare_signal
+from ecg_plot import render_ecg_plot
 
 # ----------- LOAD MODEL -----------
 MODEL_PATH = Path(__file__).resolve().parent / "ecg_cnn_model.h5"
@@ -94,25 +90,7 @@ def predict_ecg(file):
         else:
             heart_rate = None
 
-        # ECG Plot
-        plt.figure(figsize=(8, 3))
-        plt.plot(signal[:500], color='royalblue', label="ECG Signal")
-        for p in peaks:
-            if p < 500:
-                plt.plot(p, signal[p], "ro", markersize=5)
-        bpm_label = f"{heart_rate} BPM" if heart_rate else "-- BPM"
-        plt.title(f"ECG Signal ({bpm_label})", fontsize=13)
-        plt.xlabel("Sample")
-        plt.ylabel("Amplitude")
-        plt.grid(alpha=0.3)
-        plt.tight_layout()
-
-        # Save to disk to prevent BytesIO garbage collection errors
-        output_image_path = "temp_ecg_plot.png"
-        plt.savefig(output_image_path, format='png')
-        plt.close()
-
-        final_img = Image.open(output_image_path)
+        final_img = render_ecg_plot(signal, peaks, heart_rate)
 
         # Result text
         emoji = "🔴" if result == "Abnormal" else "🟢"

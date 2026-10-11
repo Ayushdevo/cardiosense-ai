@@ -2,8 +2,10 @@ import gradio as gr
 import numpy as np
 import pandas as pd
 import os
-import traceback
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
@@ -25,9 +27,9 @@ def preprocess(filepath):
         data = pd.read_csv(filepath, encoding='latin1')
         # Convert columns to string first to prevent AttributeError on numeric headers
         data.columns = data.columns.astype(str).str.replace("'", "").str.strip().str.upper()
-    except Exception as e:
-        print(f"Error reading CSV: {e}")
-        return None, f"Error reading CSV: {e}"
+    except Exception:
+        logger.warning("Unable to read ECG CSV", exc_info=True)
+        return None, "Unable to read ECG CSV. Check the uploaded file format and try again."
 
     if data.shape[1] < 1:
         return None, "The uploaded CSV has no columns."
@@ -56,8 +58,8 @@ def predict_ecg(file):
             return "❌ No file uploaded. Please ensure the file finishes uploading before clicking Analyze.", None
 
         # Safely extract the file path depending on the Gradio version
-        if isinstance(file, str):
-            file_path = file
+        if isinstance(file, (str, os.PathLike)):
+            file_path = os.fspath(file)
         elif isinstance(file, dict):
             file_path = file.get("path") or file.get("name")
         elif hasattr(file, "path"):
@@ -65,7 +67,7 @@ def predict_ecg(file):
         elif hasattr(file, "name"):
             file_path = file.name
         else:
-            return f"❌ Unknown file object type: {type(file)}", None
+            return "❌ Unsupported upload. Please select an ECG CSV file.", None
 
         # Run preprocessing
         result_data, error_msg = preprocess(file_path)
@@ -105,10 +107,9 @@ def predict_ecg(file):
 
         return output_text, final_img
 
-    except Exception as e:
-        # If the app crashes, output the exact error to the UI
-        error_trace = traceback.format_exc()
-        return f"❌ **Application Error:**\n```\n{str(e)}\n```\n\n**Traceback:**\n```\n{error_trace}\n```", None
+    except Exception:
+        logger.exception("ECG analysis failed")
+        return "❌ ECG analysis failed. Please retry with a valid ECG CSV file.", None
 
 
 # ----------- GRADIO UI -----------

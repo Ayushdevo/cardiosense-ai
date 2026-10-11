@@ -59,6 +59,18 @@ The selected ECG column must contain at least 400 finite numeric samples with
 some variation. Missing, infinite, text, and constant samples are rejected;
 removing gaps silently would change the waveform's sample timing.
 
+## Development checks
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest -q
+```
+
+Tests cover model startup, signal validation, concurrent plot isolation,
+probability validation, and a prediction using the checked-in CNN. Errors shown
+in the interface omit internal paths and stack traces; server logs retain the
+details needed to debug failures.
+
 ---
 
 ## 🚀 Deployment (Render)

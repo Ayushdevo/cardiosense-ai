@@ -2,7 +2,7 @@
 
 ### Deep Learning-Based ECG Analysis System
 
-CardioSense AI is a web-based application that analyzes ECG (Electrocardiogram) signals using a Convolutional Neural Network (CNN). It detects abnormalities, calculates heart rate, visualizes ECG signals, and converts raw ECG data into CSV format.
+CardioSense AI analyzes uploaded ECG CSV signals using a Convolutional Neural Network (CNN), estimates heart rate, and plots the waveform in a Gradio interface.
 
 ---
 
@@ -11,8 +11,7 @@ CardioSense AI is a web-based application that analyzes ECG (Electrocardiogram) 
 * 🧠 AI-based ECG Classification (Normal / Abnormal)
 * ❤️ Heart Rate (BPM) Calculation using R-Peak Detection
 * 📈 ECG Waveform Visualization with Peak Marking
-* 🔄 Raw ECG Data → CSV Converter
-* 🌐 Interactive Web Interface (Flask)
+* 🌐 Interactive Web Interface (Gradio)
 
 ---
 
@@ -20,11 +19,10 @@ CardioSense AI is a web-based application that analyzes ECG (Electrocardiogram) 
 
 * Python
 * TensorFlow / Keras (Deep Learning)
-* Flask (Backend)
+* Gradio (Web Interface)
 * Pandas, NumPy (Data Processing)
 * SciPy (Signal Processing)
 * Matplotlib (Visualization)
-* HTML, CSS, JavaScript (Frontend)
 * Render (Deployment)
 * GitHub (Version Control)
 
@@ -52,7 +50,26 @@ python app.py
 ```
 
 Open in browser:
-http://127.0.0.1:5000/
+http://127.0.0.1:10000/
+
+`PORT` overrides the default port of 10000. The model is loaded relative to
+`app.py`, so startup also works when the process has a different working directory.
+
+The selected ECG column must contain at least 400 finite numeric samples with
+some variation. Missing, infinite, text, and constant samples are rejected;
+removing gaps silently would change the waveform's sample timing.
+
+## Development checks
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest -q
+```
+
+Tests cover model startup, signal validation, concurrent plot isolation,
+probability validation, and a prediction using the checked-in CNN. Errors shown
+in the interface omit internal paths and stack traces; server logs retain the
+details needed to debug failures.
 
 ---
 
@@ -72,7 +89,7 @@ pip install -r requirements.txt
 Start Command:
 
 ```
-gunicorn app:app --workers=1 --threads=1 --timeout=120
+python app.py
 ```
 
 5. Deploy

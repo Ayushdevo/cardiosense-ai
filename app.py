@@ -1,34 +1,35 @@
 import gradio as gr
 import numpy as np
 import pandas as pd
-from PIL import Image
 import os
-import traceback
+import logging
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 import tensorflow as tf
 tf.config.set_visible_devices([], 'GPU')
 
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-
 from scipy.signal import find_peaks
+from ecg_processing import binary_probability, prepare_signal
+from ecg_plot import render_ecg_plot
 
 # ----------- LOAD MODEL -----------
-model = tf.keras.models.load_model("ecg_cnn_model.h5", compile=False)
+MODEL_PATH = Path(__file__).resolve().parent / "ecg_cnn_model.h5"
+model = tf.keras.models.load_model(MODEL_PATH, compile=False)
 
 
 # ----------- PREPROCESS -----------
 def preprocess(filepath):
     try:
-        data = pd.read_csv(filepath, encoding='latin1', on_bad_lines='skip')
+        data = pd.read_csv(filepath, encoding='latin1')
         # Convert columns to string first to prevent AttributeError on numeric headers
         data.columns = data.columns.astype(str).str.replace("'", "").str.strip().str.upper()
-    except Exception as e:
-        print(f"Error reading CSV: {e}")
-        return None, f"Error reading CSV: {e}"
+    except Exception:
+        logger.warning("Unable to read ECG CSV", exc_info=True)
+        return None, "Unable to read ECG CSV. Check the uploaded file format and try again."
 
     if data.shape[1] < 1:
         return None, "The uploaded CSV has no columns."
@@ -42,23 +43,11 @@ def preprocess(filepath):
 
     # Force the signal to be numeric (turns text/headers mixed in data into NaN)
     signal = pd.to_numeric(signal, errors='coerce')
-    
-    # Drop any NaN values caused by text
-    signal = signal[~np.isnan(signal)]
 
-    # Dynamically grab the exact input length your model expects
-    expected_length = model.input_shape[1]
-
-    if len(signal) < expected_length:
-        return None, f"Not enough valid numerical data points. Found {len(signal)}, need at least {expected_length}."
-
-    # Normalize
-    signal = (signal - np.mean(signal)) / (np.std(signal) + 1e-8)
-    
-    # Slice the segment using the model's exact expected length
-    segment = signal[:expected_length].reshape(1, expected_length, 1)
-
-    return (segment, signal), None
+    try:
+        return prepare_signal(signal, model.input_shape[1]), None
+    except ValueError as error:
+        return None, str(error)
 
 
 # ----------- PREDICT -----------
@@ -69,8 +58,8 @@ def predict_ecg(file):
             return "❌ No file uploaded. Please ensure the file finishes uploading before clicking Analyze.", None
 
         # Safely extract the file path depending on the Gradio version
-        if isinstance(file, str):
-            file_path = file
+        if isinstance(file, (str, os.PathLike)):
+            file_path = os.fspath(file)
         elif isinstance(file, dict):
             file_path = file.get("path") or file.get("name")
         elif hasattr(file, "path"):
@@ -78,7 +67,7 @@ def predict_ecg(file):
         elif hasattr(file, "name"):
             file_path = file.name
         else:
-            return f"❌ Unknown file object type: {type(file)}", None
+            return "❌ Unsupported upload. Please select an ECG CSV file.", None
 
         # Run preprocessing
         result_data, error_msg = preprocess(file_path)
@@ -89,7 +78,7 @@ def predict_ecg(file):
         segment, signal = result_data
 
         # Model prediction
-        pred = model.predict(segment, verbose=0)[0][0]
+        pred = binary_probability(model.predict(segment, verbose=0))
         confidence = round(float(pred) * 100, 2) if pred > 0.5 else round((1 - float(pred)) * 100, 2)
         result = "Abnormal" if pred > 0.5 else "Normal"
 
@@ -103,25 +92,7 @@ def predict_ecg(file):
         else:
             heart_rate = None
 
-        # ECG Plot
-        plt.figure(figsize=(8, 3))
-        plt.plot(signal[:500], color='royalblue', label="ECG Signal")
-        for p in peaks:
-            if p < 500:
-                plt.plot(p, signal[p], "ro", markersize=5)
-        bpm_label = f"{heart_rate} BPM" if heart_rate else "-- BPM"
-        plt.title(f"ECG Signal ({bpm_label})", fontsize=13)
-        plt.xlabel("Sample")
-        plt.ylabel("Amplitude")
-        plt.grid(alpha=0.3)
-        plt.tight_layout()
-
-        # Save to disk to prevent BytesIO garbage collection errors
-        output_image_path = "temp_ecg_plot.png"
-        plt.savefig(output_image_path, format='png')
-        plt.close()
-
-        final_img = Image.open(output_image_path)
+        final_img = render_ecg_plot(signal, peaks, heart_rate)
 
         # Result text
         emoji = "🔴" if result == "Abnormal" else "🟢"
@@ -136,10 +107,9 @@ def predict_ecg(file):
 
         return output_text, final_img
 
-    except Exception as e:
-        # If the app crashes, output the exact error to the UI 
-        error_trace = traceback.format_exc()
-        return f"❌ **Application Error:**\n```\n{str(e)}\n```\n\n**Traceback:**\n```\n{error_trace}\n```", None
+    except Exception:
+        logger.exception("ECG analysis failed")
+        return "❌ ECG analysis failed. Please retry with a valid ECG CSV file.", None
 
 
 # ----------- GRADIO UI -----------

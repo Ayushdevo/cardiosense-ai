@@ -16,6 +16,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from scipy.signal import find_peaks
+from ecg_processing import prepare_signal
 
 # ----------- LOAD MODEL -----------
 MODEL_PATH = Path(__file__).resolve().parent / "ecg_cnn_model.h5"
@@ -25,7 +26,7 @@ model = tf.keras.models.load_model(MODEL_PATH, compile=False)
 # ----------- PREPROCESS -----------
 def preprocess(filepath):
     try:
-        data = pd.read_csv(filepath, encoding='latin1', on_bad_lines='skip')
+        data = pd.read_csv(filepath, encoding='latin1')
         # Convert columns to string first to prevent AttributeError on numeric headers
         data.columns = data.columns.astype(str).str.replace("'", "").str.strip().str.upper()
     except Exception as e:
@@ -45,22 +46,10 @@ def preprocess(filepath):
     # Force the signal to be numeric (turns text/headers mixed in data into NaN)
     signal = pd.to_numeric(signal, errors='coerce')
 
-    # Drop any NaN values caused by text
-    signal = signal[~np.isnan(signal)]
-
-    # Dynamically grab the exact input length your model expects
-    expected_length = model.input_shape[1]
-
-    if len(signal) < expected_length:
-        return None, f"Not enough valid numerical data points. Found {len(signal)}, need at least {expected_length}."
-
-    # Normalize
-    signal = (signal - np.mean(signal)) / (np.std(signal) + 1e-8)
-
-    # Slice the segment using the model's exact expected length
-    segment = signal[:expected_length].reshape(1, expected_length, 1)
-
-    return (segment, signal), None
+    try:
+        return prepare_signal(signal, model.input_shape[1]), None
+    except ValueError as error:
+        return None, str(error)
 
 
 # ----------- PREDICT -----------

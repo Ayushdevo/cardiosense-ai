@@ -55,6 +55,10 @@ http://127.0.0.1:10000/
 `PORT` overrides the default port of 10000. The model is loaded relative to
 `app.py`, so startup also works when the process has a different working directory.
 
+The selected ECG column must contain at least 400 finite numeric samples with
+some variation. Missing, infinite, text, and constant samples are rejected;
+removing gaps silently would change the waveform's sample timing.
+
 ---
 
 ## 🚀 Deployment (Render)

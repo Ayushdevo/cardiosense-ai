@@ -11,7 +11,7 @@ import tensorflow as tf
 tf.config.set_visible_devices([], 'GPU')
 
 from scipy.signal import find_peaks
-from ecg_processing import prepare_signal
+from ecg_processing import binary_probability, prepare_signal
 from ecg_plot import render_ecg_plot
 
 # ----------- LOAD MODEL -----------
@@ -76,7 +76,7 @@ def predict_ecg(file):
         segment, signal = result_data
 
         # Model prediction
-        pred = model.predict(segment, verbose=0)[0][0]
+        pred = binary_probability(model.predict(segment, verbose=0))
         confidence = round(float(pred) * 100, 2) if pred > 0.5 else round((1 - float(pred)) * 100, 2)
         result = "Abnormal" if pred > 0.5 else "Normal"
 

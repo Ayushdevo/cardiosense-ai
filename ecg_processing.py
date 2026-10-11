@@ -4,6 +4,17 @@ from numbers import Integral
 import numpy as np
 
 
+def binary_probability(prediction):
+    values = np.asarray(prediction)
+    numeric = np.issubdtype(values.dtype, np.floating) or np.issubdtype(values.dtype, np.integer)
+    if values.shape != (1, 1) or not numeric:
+        raise ValueError("The model must return one binary probability")
+    probability = float(values[0, 0])
+    if not np.isfinite(probability) or not 0 <= probability <= 1:
+        raise ValueError("The model probability must be finite and between 0 and 1")
+    return probability
+
+
 def prepare_signal(values, expected_length):
     if isinstance(expected_length, bool) or not isinstance(expected_length, Integral) or expected_length < 1:
         raise ValueError("The model must declare a positive input length")

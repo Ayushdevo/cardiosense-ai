@@ -4,6 +4,7 @@ import pandas as pd
 from PIL import Image
 import os
 import traceback
+from pathlib import Path
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
@@ -17,7 +18,8 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 
 # ----------- LOAD MODEL -----------
-model = tf.keras.models.load_model("ecg_cnn_model.h5", compile=False)
+MODEL_PATH = Path(__file__).resolve().parent / "ecg_cnn_model.h5"
+model = tf.keras.models.load_model(MODEL_PATH, compile=False)
 
 
 # ----------- PREPROCESS -----------
@@ -42,7 +44,7 @@ def preprocess(filepath):
 
     # Force the signal to be numeric (turns text/headers mixed in data into NaN)
     signal = pd.to_numeric(signal, errors='coerce')
-    
+
     # Drop any NaN values caused by text
     signal = signal[~np.isnan(signal)]
 
@@ -54,7 +56,7 @@ def preprocess(filepath):
 
     # Normalize
     signal = (signal - np.mean(signal)) / (np.std(signal) + 1e-8)
-    
+
     # Slice the segment using the model's exact expected length
     segment = signal[:expected_length].reshape(1, expected_length, 1)
 
@@ -137,7 +139,7 @@ def predict_ecg(file):
         return output_text, final_img
 
     except Exception as e:
-        # If the app crashes, output the exact error to the UI 
+        # If the app crashes, output the exact error to the UI
         error_trace = traceback.format_exc()
         return f"❌ **Application Error:**\n```\n{str(e)}\n```\n\n**Traceback:**\n```\n{error_trace}\n```", None
 

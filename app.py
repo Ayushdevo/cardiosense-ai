@@ -317,8 +317,8 @@ def analyze():
         with tempfile.NamedTemporaryFile(
             mode="wb", suffix=".csv", delete=False
         ) as temp:
-            uploaded.save(temp)
             temp_path = temp.name
+            uploaded.save(temp)
 
         result = analyze_ecg(temp_path)
         return render_template_string(PAGE, result=result)
@@ -355,8 +355,8 @@ def analyze_api():
         with tempfile.NamedTemporaryFile(
             mode="wb", suffix=".csv", delete=False
         ) as temp:
-            uploaded.save(temp)
             temp_path = temp.name
+            uploaded.save(temp)
 
         result = analyze_ecg(temp_path)
         return jsonify(result)

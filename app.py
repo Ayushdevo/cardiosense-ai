@@ -56,7 +56,7 @@ app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB
 
 def preprocess(filepath):
     try:
-        data = pd.read_csv(filepath, encoding="latin1")
+        data = pd.read_csv(filepath, encoding="latin1", skip_blank_lines=False)
 
         data.columns = (
             data.columns.astype(str)
@@ -77,9 +77,7 @@ def preprocess(filepath):
 
         signal = pd.to_numeric(
             pd.Series(signal), errors="coerce"
-        ).to_numpy(dtype=np.float32)
-
-        signal = signal[np.isfinite(signal)]
+        ).to_numpy(dtype=np.float64)
 
         if signal.size == 0:
             return None, "No valid numeric ECG samples were found."

@@ -1,4 +1,5 @@
-gradio
+Flask>=3,<4
+Pillow
 tensorflow==2.19.0
 numpy
 pandas

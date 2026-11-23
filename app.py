@@ -160,15 +160,10 @@ def analyze_ecg(filepath):
 
     segment, signal = result_data
 
-    prediction = binary_probability(
-        model.predict(segment, verbose=0)
-    )
-    prediction = float(np.asarray(prediction).reshape(-1)[0])
-
-    if not np.isfinite(prediction):
-        raise ValueError("The model returned an invalid prediction.")
-
-    prediction = float(np.clip(prediction, 0.0, 1.0))
+    try:
+        prediction = binary_probability(model.predict(segment, verbose=0))
+    except ValueError as exc:
+        raise RuntimeError("The ECG model could not produce a valid prediction") from exc
 
     result = "Abnormal" if prediction > 0.5 else "Normal"
     confidence = (

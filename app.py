@@ -88,6 +88,9 @@ def preprocess(filepath):
 
         return prepared, None
 
+    except (OSError, UnicodeError, pd.errors.ParserError) as exc:
+        logger.warning("Unable to read ECG CSV: %s", exc)
+        return None, "Unable to read ECG CSV."
     except (ValueError, TypeError) as exc:
         logger.warning("Invalid ECG data: %s", exc)
         return None, str(exc)

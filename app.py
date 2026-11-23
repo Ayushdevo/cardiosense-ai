@@ -8,7 +8,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 
 from flask import Flask, request, jsonify, render_template_string
 from scipy.signal import find_peaks
@@ -25,6 +24,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
+
+import tensorflow as tf
 
 try:
     tf.config.set_visible_devices([], "GPU")

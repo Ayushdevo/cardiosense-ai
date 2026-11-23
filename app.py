@@ -152,7 +152,7 @@ def image_to_data_uri(result):
 # --------------------------------------------------
 
 
-def analyze_ecg(filepath):
+def _analyze_ecg(filepath):
     result_data, error = preprocess(filepath)
 
     if result_data is None:
@@ -183,18 +183,40 @@ def analyze_ecg(filepath):
 
     plot = render_ecg_plot(signal, peaks, heart_rate)
 
-    return {
+    analysis = {
         "result": result,
         "confidence": round(confidence, 2),
         "heart_rate": heart_rate,
-        "plot": image_to_data_uri(plot),
         "advice": (
             "Please consult a qualified healthcare professional."
             if result == "Abnormal"
             else "This result does not rule out a heart condition."
         ),
     }
+    return analysis, plot
 
+
+def analyze_ecg(filepath):
+    analysis, plot = _analyze_ecg(filepath)
+    return {**analysis, "plot": image_to_data_uri(plot)}
+
+
+def predict_ecg(filepath):
+    """Return the legacy display text and detached ECG plot."""
+    if not isinstance(filepath, (str, os.PathLike)):
+        return "Please select an ECG CSV file.", None
+    try:
+        analysis, plot = _analyze_ecg(filepath)
+    except ValueError as exc:
+        return str(exc), None
+    except Exception:
+        logger.exception("ECG analysis failed")
+        return "ECG analysis failed. Please try again.", None
+    return (
+        f"Result: **{analysis['result']}**\n\nConfidence: {analysis['confidence']:.2f}%"
+        f"\n\n{analysis['advice']}",
+        plot,
+    )
 
 
 # --------------------------------------------------

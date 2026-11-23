@@ -254,7 +254,7 @@ PAGE = """
     The file must contain numeric ECG samples.
   </p>
 
-  <form action="/analyze" method="post" enctype="multipart/form-data">
+  <form action="{{ url_for('analyze') }}" method="post" enctype="multipart/form-data">
     <input type="file" name="file" accept=".csv,text/csv" required>
     <button type="submit">🔍 Analyze ECG</button>
   </form>

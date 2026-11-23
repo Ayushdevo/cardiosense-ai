@@ -2,7 +2,7 @@
 
 ### Deep Learning-Based ECG Analysis System
 
-CardioSense AI analyzes uploaded ECG CSV signals using a Convolutional Neural Network (CNN), estimates heart rate, and plots the waveform in a Gradio interface.
+CardioSense AI analyzes uploaded ECG CSV signals using a Convolutional Neural Network (CNN), estimates heart rate, and plots the waveform in a Flask web interface.
 
 ---
 
@@ -11,7 +11,7 @@ CardioSense AI analyzes uploaded ECG CSV signals using a Convolutional Neural Ne
 * 🧠 AI-based ECG Classification (Normal / Abnormal)
 * ❤️ Heart Rate (BPM) Calculation using R-Peak Detection
 * 📈 ECG Waveform Visualization with Peak Marking
-* 🌐 Interactive Web Interface (Gradio)
+* 🌐 Interactive Web Interface (Flask)
 
 ---
 
@@ -19,7 +19,7 @@ CardioSense AI analyzes uploaded ECG CSV signals using a Convolutional Neural Ne
 
 * Python
 * TensorFlow / Keras (Deep Learning)
-* Gradio (Web Interface)
+* Flask (Web Interface)
 * Pandas, NumPy (Data Processing)
 * SciPy (Signal Processing)
 * Matplotlib (Visualization)
@@ -50,9 +50,9 @@ python app.py
 ```
 
 Open in browser:
-http://127.0.0.1:10000/
+http://127.0.0.1:8000/
 
-`PORT` overrides the default port of 10000. The model is loaded relative to
+`PORT` overrides the default port of 8000. The model is loaded relative to
 `app.py`, so startup also works when the process has a different working directory.
 
 The selected ECG column must contain at least 400 finite numeric samples with
